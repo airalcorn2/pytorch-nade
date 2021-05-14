@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+export NADE_PROJECT_DIR=/home/michael/pytorch-nade
+export NADE_EXPERIMENTS_DIR=/home/michael/nade_experiments
