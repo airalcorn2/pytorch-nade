@@ -8,11 +8,11 @@ from settings import *
 from torch import nn
 from train_orderless_nade import init_datasets, init_model
 
-JOB = "20210514141818"
+JOB = "20210520091205"
 JOB_DIR = f"{EXPERIMENTS_DIR}/{JOB}"
 
 
-def test_nade():
+def multi_order_test_nll():
     opts = yaml.safe_load(open(f"{JOB_DIR}/{JOB}.yaml"))
 
     # Initialize datasets.
@@ -26,21 +26,63 @@ def test_nade():
 
     criterion = nn.BCEWithLogitsLoss(reduction="none")
 
+    orders = 10
     test_loss_best_valid = 0.0
-    with torch.no_grad():
-        n_test = 0
-        for (batch_idx, test_tensors) in enumerate(test_loader):
-            print(batch_idx)
-            masks = torch.zeros_like(test_tensors["mask"])
-            test_tensors["mask"] = masks
-            n_pix = len(masks[0])
-            for n_cond in range(n_pix):
-                masks[:, :n_cond] = 1
-                preds = model(test_tensors).flatten()
+    n_test = 0
+    n_pix = 28 ** 2
+    pix_idxs = np.arange(n_pix)
+    for order in range(orders):
+        np.random.shuffle(pix_idxs)
+        with torch.no_grad():
+            for (batch_idx, test_tensors) in enumerate(test_loader):
+                print(batch_idx)
+                masks = torch.zeros_like(test_tensors["mask"])
+                test_tensors["mask"] = masks
                 labels = test_tensors["pixels"].flatten().to(device)
-                losses = criterion(preds[n_cond::n_pix], labels[n_cond::n_pix])
-                test_loss_best_valid += losses.mean().item()
-                n_test += 1
+                for pix_idx in pix_idxs:
+                    preds = model(test_tensors).flatten()
+                    losses = criterion(preds[pix_idx::n_pix], labels[pix_idx::n_pix])
+                    test_loss_best_valid += losses.mean().item()
+                    masks[:, pix_idx] = 1
+                    n_test += 1
+
+    test_loss_best_valid /= n_test
+    print(test_loss_best_valid)
+
+
+def test_orderless_nade():
+    opts = yaml.safe_load(open(f"{JOB_DIR}/{JOB}.yaml"))
+
+    # Initialize datasets.
+    (_, _, _, _, _, test_loader) = init_datasets(opts)
+
+    # Initialize model.
+    device = torch.device("cuda:0")
+    model = init_model(opts).to(device)
+    model.load_state_dict(torch.load(f"{JOB_DIR}/best_params.pth"))
+    model.eval()
+
+    criterion = nn.BCEWithLogitsLoss(reduction="none")
+
+    orders = 10
+    test_loss_best_valid = 0.0
+    n_test = 0
+    n_pix = 28 ** 2
+    pix_idxs = np.arange(n_pix)
+    for order in range(orders):
+        np.random.shuffle(pix_idxs)
+        with torch.no_grad():
+            for (batch_idx, test_tensors) in enumerate(test_loader):
+                print(batch_idx)
+                masks = torch.zeros_like(test_tensors["mask"])
+                test_tensors["mask"] = masks
+                labels = test_tensors["pixels"].flatten().to(device)
+                for pix_idx in pix_idxs:
+                    preds = model(test_tensors).flatten()
+                    losses = criterion(preds[pix_idx::n_pix], labels[pix_idx::n_pix])
+                    test_loss_best_valid += losses.mean().item()
+                    masks[:, pix_idx] = 1
+                    n_test += 1
 
     test_loss_best_valid /= n_test
     print(test_loss_best_valid)
