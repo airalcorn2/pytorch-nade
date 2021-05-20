@@ -23,8 +23,8 @@ def init_datasets(opts):
         test_data = np.load("mnist_test.npy")
     except FileNotFoundError:
         download_mnist()
-        train_data = np.load(f"mnist_train.npy")
-        test_data = np.load(f"mnist_test.npy")
+        train_data = np.load("mnist_train.npy")
+        test_data = np.load("mnist_test.npy")
 
     train_valid_idxs = np.arange(len(train_data))
     np.random.shuffle(train_valid_idxs)
