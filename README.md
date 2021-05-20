@@ -77,7 +77,6 @@ echo "  epochs: 4000" >> ${JOB}.yaml
 echo "  batch_size: 1000" >> ${JOB}.yaml
 echo "  workers: 10" >> ${JOB}.yaml
 echo "  learning_rate: 1.0e-3" >> ${JOB}.yaml
-echo "  weight_decay: 0" >> ${JOB}.yaml
 echo "  patience: 20" >> ${JOB}.yaml
 
 echo "model:" >> ${JOB}.yaml
@@ -89,5 +88,5 @@ mv ${JOB}.yaml ${NADE_EXPERIMENTS_DIR}/${JOB}/
 
 gpu=0
 cd ${NADE_PROJECT_DIR}
-nohup python3 train_nade.py ${JOB} ${gpu} > ${NADE_EXPERIMENTS_DIR}/${JOB}/train.log &
+nohup python3 train_orderless_nade.py ${JOB} ${gpu} > ${NADE_EXPERIMENTS_DIR}/${JOB}/train.log &
 ```
